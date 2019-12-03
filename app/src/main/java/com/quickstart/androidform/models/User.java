@@ -19,17 +19,19 @@ public class User {
     @NonNull
     private String userName;
     private String userBirth;
+    private String userDistrict;
     private String userGender;
     private String userLanguage;
 
     public User() {
     }
 
-    public User(@NonNull String userId, String userImageUrl, @NonNull String userName, String userBirth, String userGender, String userLanguage) {
+    public User(@NonNull String userId, String userImageUrl, @NonNull String userName, String userBirth, String userDistrict, String userGender, String userLanguage) {
         this.userId = userId;
         this.userImageUrl = userImageUrl;
         this.userName = userName;
         this.userBirth = userBirth;
+        this.userDistrict = userDistrict;
         this.userGender = userGender;
         this.userLanguage = userLanguage;
     }
@@ -66,6 +68,14 @@ public class User {
 
     public void setUserBirth(String userBirth) {
         this.userBirth = userBirth;
+    }
+
+    public String getUserDistrict() {
+        return userDistrict;
+    }
+
+    public void setUserDistrict(String userDistrict) {
+        this.userDistrict = userDistrict;
     }
 
     public String getUserGender() {

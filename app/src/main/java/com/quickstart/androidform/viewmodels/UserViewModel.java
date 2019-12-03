@@ -8,7 +8,6 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
-import com.quickstart.androidform.activities.MainActivity;
 import com.quickstart.androidform.models.User;
 import com.quickstart.androidform.repositories.room.AppDatabase;
 import com.quickstart.androidform.repositories.room.AppDatabaseDao;

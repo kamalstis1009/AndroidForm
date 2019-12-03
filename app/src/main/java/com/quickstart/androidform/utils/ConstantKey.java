@@ -3,7 +3,7 @@ package com.quickstart.androidform.utils;
 public class ConstantKey {
 
     public final static String DATABASE_NAME = "kamal_database";
-    public final static int DATABASE_VERSION = 1;
+    public final static int DATABASE_VERSION = 2;
 
     public final static String COLUMN_ID = "id";
 

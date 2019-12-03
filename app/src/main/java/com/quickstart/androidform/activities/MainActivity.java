@@ -31,6 +31,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -38,6 +40,7 @@ import com.google.gson.Gson;
 import com.quickstart.androidform.R;
 import com.quickstart.androidform.models.User;
 import com.quickstart.androidform.repositories.room.AppDatabase;
+import com.quickstart.androidform.utils.Utility;
 import com.quickstart.androidform.viewmodels.UserViewModel;
 
 import java.io.ByteArrayOutputStream;
@@ -57,9 +60,10 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private static final int ACTION_PICK_REQUEST_CODE = 1;
-    private static final int READ_EXTERNAL_STORAGE_REQUEST_CODE = 2;
+    private static final int REQUEST_CODE = 2;
     private ImageView imageView;
     private EditText name, birth;
+    private Spinner districts;
     private RadioGroup radioGroup;
     private LinearLayout checkboxLayout;
 
@@ -75,6 +79,9 @@ public class MainActivity extends AppCompatActivity {
         imageView = (ImageView) findViewById(R.id.user_image);
         name = (EditText) findViewById(R.id.user_name);
         birth = (EditText) findViewById(R.id.user_birth);
+        districts = (Spinner) findViewById(R.id.user_district);
+        districts.setSelection(1);
+        //String[] str = this.getResources().getStringArray(R.array.districts);
         radioGroup = (RadioGroup) findViewById(R.id.user_gender_group);
         //RadioButton male = (RadioButton) findViewById(R.id.user_male);
         //RadioButton female = (RadioButton) findViewById(R.id.user_female);
@@ -97,57 +104,31 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View v) {
             if (v.getId() == R.id.user_image) {
                 if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, READ_EXTERNAL_STORAGE_REQUEST_CODE);
+                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
                 } else {
                     getImage();
                 }
             }
             if (v.getId() == R.id.user_birth) {
-                getDate();
+                Utility.getDate(MainActivity.this, birth);
             }
             if (v.getId() == R.id.user_submit) {
                 String id = UUID.randomUUID().toString();
                 String n = name.getText().toString();
                 String b = birth.getText().toString();
+                String d = districts.getSelectedItem().toString();
                 String g = ((RadioButton) findViewById(radioGroup.getCheckedRadioButtonId())).getText().toString();
 
-                User user = new User(id, encodeFromImage(), n, b, g, getCheckboxValue());
+                User user = new User(id, Utility.bitmapToBase64(imageView), n, b, d, g, Utility.getCheckboxValue(checkboxLayout));
                 if (!n.isEmpty() && !b.isEmpty() && !g.isEmpty()) {
                     //saveData(user);
                     saveIntoDatabase(user);
                 }
                 if (imagePath != null) {
-                    ((ImageView) findViewById(R.id.load_image)).setImageBitmap(loadImage());
+                    ((ImageView) findViewById(R.id.load_image)).setImageBitmap(Utility.loadImage(imagePath, imageName));
                 }
             }
         }
-    }
-
-    //====================================================| DatePicker
-    private void getDate() {
-        DatePicker datePicker = new DatePicker(this);
-        int day = datePicker.getDayOfMonth();
-        int mon = datePicker.getMonth();
-        int year = datePicker.getYear();
-        DatePickerDialog dialog = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
-            @Override
-            public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
-                birth.setText(dayOfMonth +"/"+ (month+1) +"/"+ year);
-            }
-        }, year, mon, day);
-        dialog.show();
-    }
-
-    //====================================================| Checkbox
-    private String getCheckboxValue() {
-        StringBuilder value = new StringBuilder();
-        for(int i=0; i<checkboxLayout.getChildCount(); i++) {
-            CheckBox cb = (CheckBox) checkboxLayout.getChildAt(i);
-            if (cb.isClickable()) {
-                value.append(cb.getText().toString()).append(",");
-            }
-        }
-        return value.toString();
     }
 
     //====================================================| For Image
@@ -163,87 +144,54 @@ public class MainActivity extends AppCompatActivity {
             Uri uri = data.getData();
             imageView.setImageURI(uri);
             imageName = "img_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".png";
-            imagePath = saveToInternalStorage(((BitmapDrawable)imageView.getDrawable()).getBitmap());
+            Bitmap bm = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
+            if (bm != null) {
+                imagePath = Utility.saveToInternalStorage(MainActivity.this, bm, imageName);
+            }
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode==READ_EXTERNAL_STORAGE_REQUEST_CODE && grantResults[0]==PackageManager.PERMISSION_GRANTED) {
+        if (requestCode==REQUEST_CODE && grantResults[0]==PackageManager.PERMISSION_GRANTED) {
             getImage();
         }
-    }
-
-    private String encodeFromImage() {
-        String encode = null;
-        if (imageView.getVisibility()==View.VISIBLE) {
-            Bitmap bitmap = ((BitmapDrawable)imageView.getDrawable()).getBitmap();
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-            //String path = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap,"Title",null);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                encode = Base64.getEncoder().encodeToString(stream.toByteArray());
-            } else {
-                encode = android.util.Base64.encodeToString(stream.toByteArray(), android.util.Base64.DEFAULT);
-            }
-
-            //decode
-            //byte[] decodedBytes = Base64.getDecoder().decode(encodedString);
-            //String decodedString = new String(decodedBytes);
-
-            //https://github.com/elye/demo_android_base64_image/tree/master/app/src/main/java/com/elyeproj/base64imageload
-            //val bitmap = BitmapFactory.decodeResource(resources, resourceId)
-            //return bitmap.encodeBitmapIntoBase64(compressFormat, quality)
-        }
-        return encode;
-    }
-
-    private String saveToInternalStorage(Bitmap bitmapImage){
-        File directory = new File(getFilesDir() + "/UsersPhoto/");
-        directory.mkdir(); //Create imageDir
-        File file = new File(directory, imageName);
-        try {
-            OutputStream output = new FileOutputStream(file);
-            bitmapImage.compress(Bitmap.CompressFormat.PNG, 100, output); // Compress into png format image from 0% - 100%
-            output.flush();
-            output.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return directory.getAbsolutePath();
-    }
-
-    private Bitmap loadImage(){
-        Bitmap bitmap = null;
-        try {
-            File file = new File(imagePath, imageName);
-            bitmap = BitmapFactory.decodeStream(new FileInputStream(file));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        return bitmap;
     }
 
     //====================================================| Save Button
     private void saveData(User user) {
         Log.d(TAG, user.getUserLanguage() + new Gson().toJson(user));
-        Snackbar.make(findViewById(android.R.id.content), ""+new Gson().toJson(user), Snackbar.LENGTH_INDEFINITE).show();
+        ((TextView) findViewById(R.id.user_details)).setText(user.getUserName()+user.getUserBirth()+user.getUserDistrict()+user.getUserGender()+user.getUserLanguage());
+        //Snackbar.make(findViewById(android.R.id.content), ""+new Gson().toJson(user), Snackbar.LENGTH_INDEFINITE).show();
     }
 
 
     //====================================================| Room
     private void saveIntoDatabase(User user) {
         long result = mUserViewModel.insert(user);
-        Toast.makeText(MainActivity.this, ""+result, Toast.LENGTH_SHORT).show();
+        //String value = new Gson().toJson(user);
+        //((TextView) findViewById(R.id.user_details)).setText(value);
+        Toast.makeText(MainActivity.this, "saveIntoDatabase " + result, Toast.LENGTH_SHORT).show();
     }
 
+    private boolean disable;
     private void getAllUser() {
         mUserViewModel.getAll().observe(MainActivity.this, new Observer<List<User>>() {
             @Override
             public void onChanged(List<User> users) {
                 if (users != null) {
-                    Log.d(TAG, new Gson().toJson(users));
+                    Log.d(TAG, "getAllUser() " + new Gson().toJson(users));
+                    for (User u: users) {
+                        if (u != null && !disable) {
+                            disable = true;
+                            Bitmap bitmap = Utility.base64ToBitmap(u.getUserImageUrl());
+                            if (bitmap != null) {
+                                ((ImageView) findViewById(R.id.load_image)).setImageBitmap(bitmap);
+                            }
+                            Log.d(TAG, "getAllUser() " + users.get(0).getUserImageUrl());
+                        }
+                    }
                 }
             }
         });
