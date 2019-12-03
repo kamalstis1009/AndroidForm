@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
-import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.DatePicker;
@@ -23,8 +22,6 @@ import java.io.OutputStream;
 import java.util.Base64;
 
 public class Utility {
-
-    private static final String TAG = "Utility";
 
     //====================================================| DatePicker
     public static void getDate(Context context, EditText birth) {
