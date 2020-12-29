@@ -2,8 +2,8 @@
 
 
 // Jetpack Component : Room persistence library
-implementation "androidx.room:room-runtime:2.2.5"
-annotationProcessor "androidx.room:room-compiler:2.2.5"
+<p>implementation "androidx.room:room-runtime:2.2.5"</p>
+<p>annotationProcessor "androidx.room:room-compiler:2.2.5"</p>
 
 // Jetpack Components : Lifecycle-Aware, ViewModel and LiveData
-implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
+<p>implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'</p>
